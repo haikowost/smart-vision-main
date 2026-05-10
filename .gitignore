@@ -1,0 +1,11 @@
+# Windows system files — created automatically, never commit
+desktop.ini
+Thumbs.db
+ehthumbs.db
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.swp
