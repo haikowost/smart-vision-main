@@ -2,715 +2,1034 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SV Ops">
+  <meta name="apple-mobile-web-app-title" content="The Director">
   <meta name="theme-color" content="#0B1623">
-  <title>Smart Vision Ops</title>
+  <title>The Director · Smart Vision</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:          #0B1623;
-      --bg-surface:  #111E2E;
-      --bg-card:     #162333;
-      --bg-card2:    #1A2A3E;
-      --accent:      #1E9AD6;
-      --accent-dk:   #0E5F8A;
-      --txt:         #E8EDF2;
-      --text-muted:  #8899AA;
-      --border:      rgba(30,154,214,0.22);
-      --danger:      #C0392B;
-      --warn:        #E67E22;
-      --success:     #27AE60;
-      --radius:      10px;
+      --sv-blue:    #1E9AD6;
+      --sv-blue-dk: #0E5F8A;
+      --sv-navy:    #1A2F4E;
+      --bg:         #0B1623;
+      --bg-surface: #111E2E;
+      --bg-card:    #162333;
+      --txt:        #E8EDF2;
+      --txt-muted:  #8899AA;
+      --border:     rgba(30,154,214,0.22);
+      --radius:     10px;
+      --tr:         0.3s ease;
+      --red:        #E74C3C;
+      --amber:      #E67E22;
+      --teal:       #1ABC9C;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { height: 100%; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-family: 'IBM Plex Sans', system-ui, sans-serif;
       background: var(--bg);
       color: var(--txt);
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── GATE OVERLAY ── */
-    #ops-gate {
-      position: fixed; inset: 0;
+    h1, h2, h3, h4 { font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+
+    /* ── LOCK SCREEN ── */
+    #lock-screen {
+      position: fixed;
+      inset: 0;
       background: var(--bg);
-      z-index: 9999;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.75rem;
+      transition: opacity 0.4s ease, transform 0.4s ease;
     }
-    #ops-gate.hidden { display: none; }
-    #ops-gate .gate-logo {
-      font-size: 32px; font-weight: 700;
-      color: var(--accent);
-      letter-spacing: -1px;
-      margin-bottom: 4px;
+    #lock-screen.unlocked {
+      opacity: 0;
+      transform: scale(1.03);
+      pointer-events: none;
     }
-    #ops-gate h2 { font-size: 17px; font-weight: 600; margin: 0 0 6px; }
-    #ops-gate p { font-size: 13px; color: var(--text-muted); margin: 0 0 20px; text-align: center; max-width: 300px; line-height: 1.5; }
-    #ops-gate input {
-      width: 100%; max-width: 280px;
-      padding: 13px 15px; font-size: 16px;
-      background: var(--bg-card);
-      border: 1px solid var(--border); border-radius: 8px;
-      color: var(--txt); font-family: inherit;
+    .lock-logo { height: 44px; width: auto; }
+    .lock-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      text-align: center;
     }
-    #ops-gate input:focus { outline: none; border-color: var(--accent); }
-    #ops-gate button {
-      margin-top: 10px; width: 100%; max-width: 280px;
-      padding: 13px 20px; background: var(--accent); color: white;
-      border: none; border-radius: 8px;
-      font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+    .lock-subtitle {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sv-blue);
+      margin-top: -1.25rem;
     }
-    #ops-gate button:active { opacity: 0.85; }
-    #ops-gate .err { color: var(--danger); font-size: 12px; margin-top: 8px; min-height: 16px; }
-    #ops-app[hidden] { display: none; }
-
-    /* ── HEADER ── */
-    #header {
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 100;
+    .lock-dots {
+      display: flex;
+      gap: 1rem;
     }
-    #header .logo {
-      font-size: 16px; font-weight: 700;
-      color: var(--accent); letter-spacing: -0.3px;
-    }
-    #header .logo span { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
-    .voice-bar { display: flex; gap: 8px; align-items: center; }
-    .voice-btn {
-      background: var(--bg-card); border: 1px solid var(--border);
-      color: var(--txt); border-radius: 8px;
-      padding: 7px 12px; font-size: 13px; cursor: pointer;
-      display: flex; align-items: center; gap: 5px;
-      font-family: inherit; transition: background 0.2s;
-      white-space: nowrap;
-    }
-    .voice-btn:active { background: var(--bg-card2); }
-    .voice-btn.active { background: var(--danger); border-color: var(--danger); }
-
-    /* ── MAIN LAYOUT ── */
-    main { padding: 14px 14px 80px; max-width: 760px; margin: 0 auto; }
-
-    /* ── SECTION TITLES ── */
-    .section-title {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--text-muted);
-      margin: 20px 0 10px;
-    }
-    .section-title:first-child { margin-top: 0; }
-
-    /* ── FLAGS ── */
-    .flag-card {
-      background: var(--bg-card); border-radius: var(--radius);
-      border-left: 3px solid var(--danger);
-      padding: 12px 14px; margin-bottom: 8px;
-    }
-    .flag-card.warn { border-left-color: var(--warn); }
-    .flag-title {
-      font-size: 14px; font-weight: 600; margin-bottom: 3px;
-      display: flex; align-items: flex-start; gap: 6px;
-    }
-    .flag-badge {
-      font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
-      text-transform: uppercase; padding: 2px 6px; border-radius: 4px;
-      background: rgba(192,57,43,0.2); color: var(--danger);
-      flex-shrink: 0; margin-top: 1px;
-    }
-    .flag-badge.warn { background: rgba(230,126,34,0.2); color: var(--warn); }
-    .flag-scope { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
-    .flag-detail { font-size: 13px; color: #AAB9CC; line-height: 1.5; }
-
-    /* ── PROJECT CARDS ── */
-    .project-card {
-      background: var(--bg-card); border-radius: var(--radius);
-      border: 1px solid var(--border);
-      padding: 13px 14px; margin-bottom: 8px;
-      cursor: pointer; transition: border-color 0.2s;
-    }
-    .project-card:active { border-color: var(--accent); }
-    .project-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-    .project-name { font-size: 14px; font-weight: 600; line-height: 1.3; }
-    .project-progress-label {
-      font-size: 12px; font-weight: 600; color: var(--accent);
-      flex-shrink: 0; margin-top: 1px;
-    }
-    .progress-bar-wrap {
-      height: 4px; background: rgba(255,255,255,0.08);
-      border-radius: 2px; margin: 8px 0 6px; overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%; border-radius: 2px;
-      background: linear-gradient(90deg, var(--accent-dk), var(--accent));
-      transition: width 0.6s ease;
-    }
-    .project-status { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
-    .project-next {
-      font-size: 12px; color: #9EB3C8;
-      background: rgba(30,154,214,0.07);
-      border-radius: 6px; padding: 7px 10px;
-      line-height: 1.5;
-    }
-    .project-next::before { content: "→ "; color: var(--accent); font-weight: 600; }
-
-    /* Task list inside expanded card */
-    .task-list { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
-    .task-item {
-      display: flex; align-items: flex-start; gap: 8px;
-      font-size: 12px; color: #9EB3C8; padding: 5px 8px;
-      background: rgba(255,255,255,0.03); border-radius: 6px;
-    }
-    .task-checkbox {
-      width: 16px; height: 16px; border-radius: 4px;
-      border: 1.5px solid var(--border); background: transparent;
-      cursor: pointer; flex-shrink: 0; margin-top: 1px;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .task-checkbox.done { background: var(--accent); border-color: var(--accent); }
-    .task-checkbox.done::after { content: "✓"; color: white; font-size: 10px; font-weight: 700; }
-    .task-text { flex: 1; line-height: 1.45; }
-    .task-text.done { text-decoration: line-through; color: var(--text-muted); }
-    .task-priority {
-      font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
-      text-transform: uppercase; padding: 1px 5px; border-radius: 3px;
-      flex-shrink: 0;
-    }
-    .task-priority.critical { background: rgba(192,57,43,0.2); color: var(--danger); }
-    .task-priority.high { background: rgba(230,126,34,0.15); color: var(--warn); }
-
-    /* collapsed tasks hidden by default */
-    .project-card .task-list { display: none; }
-    .project-card.expanded .task-list { display: flex; }
-    .expand-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
-
-    /* ── DIVISION FILTER ── */
-    .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-    .filter-btn {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
-      text-transform: uppercase; padding: 5px 10px; border-radius: 20px;
-      border: 1px solid var(--border); background: transparent;
-      color: var(--text-muted); cursor: pointer; font-family: inherit;
+    .lock-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
       transition: all 0.15s;
     }
-    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
-
-    /* ── PIPELINE CARDS ── */
-    .pipeline-card {
-      background: var(--bg-card); border-radius: var(--radius);
+    .lock-dot.filled { background: var(--sv-blue); border-color: var(--sv-blue); }
+    .lock-dot.error  { background: var(--red);     border-color: var(--red); }
+    .lock-error {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--red);
+      height: 1rem;
+      letter-spacing: 0.05em;
+      margin-top: -0.75rem;
+    }
+    .pin-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      max-width: 270px;
+      width: 100%;
+    }
+    .pin-btn {
+      background: var(--bg-card);
       border: 1px solid var(--border);
-      padding: 13px 14px; margin-bottom: 8px;
+      border-radius: var(--radius);
+      color: var(--txt);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      padding: 1.05rem 0;
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-user-select: none;
+      user-select: none;
     }
-    .pipeline-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-    .pipeline-name { font-size: 14px; font-weight: 600; line-height: 1.3; }
-    .stage-badge {
-      font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
-      text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
-      background: rgba(30,154,214,0.15); color: var(--accent);
-      flex-shrink: 0; white-space: nowrap;
+    .pin-btn:active { background: rgba(30,154,214,0.2); border-color: var(--sv-blue); transform: scale(0.96); }
+    .pin-btn.del { font-size: 1rem; color: var(--txt-muted); }
+
+    /* ── MAIN APP ── */
+    #app {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      padding-bottom: 5rem;
     }
-    .stage-badge.stalled { background: rgba(192,57,43,0.15); color: var(--danger); }
-    .stage-badge.proposal { background: rgba(230,126,34,0.15); color: var(--warn); }
-    .pipeline-days {
-      font-size: 11px; color: var(--text-muted); margin: 4px 0;
+    #app.visible { display: flex; }
+
+    /* ── HEADER ── */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11,22,35,0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
     }
-    .pipeline-days .days-num { font-weight: 600; }
-    .pipeline-days .days-num.stale { color: var(--warn); }
-    .pipeline-days .days-num.critical-stale { color: var(--danger); }
-    .pipeline-status { font-size: 12px; color: #9EB3C8; margin: 5px 0; line-height: 1.5; }
-    .pipeline-next {
-      font-size: 12px; color: #9EB3C8;
-      background: rgba(30,154,214,0.07);
-      border-radius: 6px; padding: 7px 10px; margin-top: 6px;
+    .app-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .app-title span { color: var(--sv-blue); }
+    .header-actions { display: flex; gap: 0.45rem; flex-shrink: 0; }
+    .icon-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--txt);
+      font-size: 0.7rem;
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 0.38rem 0.6rem;
+      cursor: pointer;
+      transition: all var(--tr);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .icon-btn:active { border-color: var(--sv-blue); background: rgba(30,154,214,0.1); }
+
+    /* ── CONTENT ── */
+    .app-content { flex: 1; padding: 1rem 1rem 0; }
+
+    /* ── LOADING / ERROR ── */
+    .state-box { text-align: center; padding: 3rem 1.5rem; color: var(--txt-muted); }
+    .state-box h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--txt); }
+    .spinner {
+      width: 34px;
+      height: 34px;
+      border: 3px solid var(--border);
+      border-top-color: var(--sv-blue);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .retry-btn {
+      background: var(--sv-blue);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 0.55rem 1.4rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all var(--tr);
+    }
+    .retry-btn:active { background: var(--sv-blue-dk); }
+
+    /* ── STATUS GROUPS ── */
+    .status-group { margin-bottom: 1.5rem; }
+    .group-header {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.35rem 0;
+      margin-bottom: 0.55rem;
+    }
+    .group-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .group-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .group-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.63rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.08rem 0.38rem;
+      color: var(--txt-muted);
+      margin-left: auto;
+    }
+
+    .dot-red   { background: var(--red); }
+    .dot-amber { background: var(--amber); }
+    .dot-blue  { background: var(--sv-blue); }
+    .dot-teal  { background: var(--teal); }
+    .text-red   { color: var(--red); }
+    .text-amber { color: var(--amber); }
+    .text-blue  { color: var(--sv-blue); }
+    .text-teal  { color: var(--teal); }
+
+    /* ── TASK CARDS ── */
+    .task-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.55rem;
+      overflow: hidden;
+      transition: border-color var(--tr);
+    }
+    .task-card-head {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.8rem 0.95rem;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .task-status-bar {
+      width: 3px;
+      min-height: 36px;
+      align-self: stretch;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .task-meta { flex: 1; min-width: 0; }
+    .task-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--txt-muted);
+      white-space: nowrap;
+    }
+    .task-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task-chevron {
+      color: var(--txt-muted);
+      font-size: 0.7rem;
+      transition: transform var(--tr);
+      flex-shrink: 0;
+    }
+    .task-card.expanded .task-chevron { transform: rotate(90deg); }
+    .task-detail {
+      display: none;
+      padding: 0 0.95rem 0.95rem;
+      border-top: 1px solid rgba(30,154,214,0.1);
+    }
+    .task-card.expanded .task-detail { display: block; }
+    .detail-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.55rem;
+      font-size: 0.82rem;
+    }
+    .detail-key {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--txt-muted);
+      white-space: nowrap;
+      padding-top: 1px;
+      min-width: 78px;
+    }
+    .detail-val { color: var(--txt); line-height: 1.5; }
+    .detail-link { color: var(--sv-blue); text-decoration: none; font-size: 0.78rem; word-break: break-all; }
+    .detail-link:hover { text-decoration: underline; }
+    .critical-badge {
+      display: inline-block;
+      background: rgba(231,76,60,0.15);
+      color: var(--red);
+      border: 1px solid rgba(231,76,60,0.3);
+      border-radius: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      padding: 0.08rem 0.35rem;
+      text-transform: uppercase;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+
+    /* ── PANEL SYSTEM ── */
+    .panel-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .panel-backdrop.open { opacity: 1; pointer-events: all; }
+    .slide-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 201;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      padding: 1.4rem 1.1rem 2rem;
+      max-height: 88vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .slide-panel.open { transform: translateY(0); }
+    .panel-drag {
+      width: 38px;
+      height: 4px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 4px;
+      margin: 0 auto 1.1rem;
+    }
+    .panel-close {
+      float: right;
+      background: none;
+      border: none;
+      color: var(--txt-muted);
+      font-size: 1.15rem;
+      cursor: pointer;
+      padding: 0.15rem;
+      line-height: 1;
+      margin-top: -0.15rem;
+    }
+    .panel-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1.1rem;
+    }
+
+    /* ── BRIEF PANEL ── */
+    .brief-section { margin-bottom: 1.1rem; }
+    .brief-section-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.63rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sv-blue);
+      margin-bottom: 0.4rem;
+    }
+    .brief-text { font-size: 0.87rem; color: var(--txt-muted); line-height: 1.65; }
+    .brief-text strong { color: var(--txt); }
+    .brief-text ul { margin: 0.4rem 0 0.4rem 1.1rem; }
+    .brief-text li { margin-bottom: 0.3rem; }
+    .colour-pill {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+    }
+    .speak-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--sv-blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.2rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 0.75rem;
+      transition: all var(--tr);
+    }
+    .speak-btn:active { background: var(--sv-blue-dk); }
+    .speak-btn.speaking { background: var(--sv-navy); }
+
+    /* ── DELEGATE PANEL ── */
+    .form-group { margin-bottom: 0.95rem; }
+    .form-label {
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.63rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--txt-muted);
+      margin-bottom: 0.35rem;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 0.62rem 0.88rem;
+      color: var(--txt);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--tr), box-shadow var(--tr);
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--sv-blue);
+      box-shadow: 0 0 0 3px rgba(30,154,214,0.12);
+    }
+    .form-textarea { resize: vertical; min-height: 76px; }
+    .form-select { appearance: none; cursor: pointer; }
+    .brief-output {
+      display: none;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 0.95rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.73rem;
+      line-height: 1.75;
+      color: var(--txt);
+      white-space: pre-wrap;
+      margin-top: 0.75rem;
+      word-break: break-word;
+    }
+    .brief-output.show { display: block; }
+    .generate-btn {
+      width: 100%;
+      background: var(--sv-blue);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 0.75rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--tr);
+    }
+    .generate-btn:active { background: var(--sv-blue-dk); }
+    .copy-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--txt-muted);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.85rem;
+      padding: 0.6rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: all var(--tr);
+    }
+    .copy-btn.show { display: flex; }
+    .copy-btn:active { border-color: var(--sv-blue); color: var(--sv-blue); }
+    .delegate-hint {
+      font-size: 0.74rem;
+      color: var(--txt-muted);
+      margin-top: 0.75rem;
+      text-align: center;
       line-height: 1.5;
     }
-    .pipeline-next::before { content: "→ "; color: var(--accent); font-weight: 600; }
-    .pipeline-contact { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
 
-    /* ── BLOCKER LIST ── */
-    .blocker-item {
-      background: var(--bg-card); border-radius: var(--radius);
-      border: 1px solid var(--border);
-      padding: 12px 14px; margin-bottom: 8px;
-      display: flex; gap: 10px; align-items: flex-start;
+    /* ── FAB ── */
+    .fab {
+      position: fixed;
+      bottom: 1.4rem;
+      right: 1.1rem;
+      z-index: 100;
+      width: 52px;
+      height: 52px;
+      background: var(--sv-blue);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.7rem;
+      font-weight: 300;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(30,154,214,0.4);
+      transition: all var(--tr);
     }
-    .blocker-num {
-      font-size: 20px; font-weight: 700; color: var(--accent);
-      line-height: 1; flex-shrink: 0; min-width: 24px;
-    }
-    .blocker-text { font-size: 13px; color: #9EB3C8; line-height: 1.55; }
+    .fab:active { background: var(--sv-blue-dk); transform: scale(0.95); }
+    .fab.visible { display: flex; }
 
-    /* ── VOICE STATUS ── */
-    #voice-status {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--bg-surface); border-top: 1px solid var(--border);
-      padding: 10px 16px; font-size: 12px; color: var(--text-muted);
-      min-height: 38px; display: none; align-items: center; gap: 8px;
-    }
-    #voice-status.visible { display: flex; }
-    #voice-status .pulse {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--danger); animation: pulse 1s ease-in-out infinite; flex-shrink: 0;
-    }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
-
-    /* ── MISC ── */
-    .divider { height: 1px; background: var(--border); margin: 16px 0; }
-    .empty { font-size: 13px; color: var(--text-muted); padding: 12px; text-align: center; }
-
-    @media (min-width: 600px) {
-      main { padding: 20px 20px 80px; }
-      .project-name { font-size: 15px; }
+    /* ── FOOTER ── */
+    .app-footer {
+      text-align: center;
+      padding: 1.4rem 1.1rem;
+      border-top: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--txt-muted);
+      line-height: 1.8;
     }
   </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════
-     PASSCODE GATE
-════════════════════════════════════════════ -->
-<div id="ops-gate">
-  <div class="gate-logo">SV</div>
-  <h2>Smart Vision Operations</h2>
-  <p>Enter passcode to continue. This device will be remembered after first unlock.</p>
-  <input id="ops-passcode" type="password" autocomplete="current-password" placeholder="Passcode" />
-  <button id="ops-unlock-btn">Unlock</button>
-  <div class="err" id="ops-err"></div>
+<!-- ================================================================
+     LOCK SCREEN
+     ================================================================ -->
+<div id="lock-screen">
+  <div style="text-align:center;">
+    <img src="assets/logos/sv-logo-transparent.png" alt="Smart Vision" class="lock-logo">
+  </div>
+  <div style="text-align:center;margin-top:-0.5rem;">
+    <div class="lock-title">The Director</div>
+    <div class="lock-subtitle" style="margin-top:0.25rem;">Smart Vision · Ops Dashboard</div>
+  </div>
+  <div class="lock-dots" id="lock-dots">
+    <div class="lock-dot" id="d0"></div>
+    <div class="lock-dot" id="d1"></div>
+    <div class="lock-dot" id="d2"></div>
+    <div class="lock-dot" id="d3"></div>
+  </div>
+  <div class="lock-error" id="lock-error">&nbsp;</div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn del" onclick="pinClear()">CLR</button>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn del" onclick="pinBack()">&#x232B;</button>
+  </div>
 </div>
 
-<!-- ════════════════════════════════════════════
+<!-- ================================================================
      MAIN APP
-════════════════════════════════════════════ -->
-<div id="ops-app" hidden>
+     ================================================================ -->
+<div id="app">
 
-  <!-- HEADER -->
-  <div id="header">
-    <div class="logo">SV Ops <span id="header-date"></span></div>
-    <div class="voice-bar">
-      <button class="voice-btn" id="btn-speak" title="Read daily briefing aloud">🔊 Brief</button>
-      <button class="voice-btn" id="btn-listen" title="Voice input">🎤</button>
+  <header class="app-header">
+    <div class="app-title">The <span>Director</span></div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="openBrief()">&#128266; Brief</button>
+      <button class="icon-btn" onclick="startCarMode()">&#128663;</button>
+      <button class="icon-btn" onclick="startSummary()">&#127897;</button>
     </div>
-  </div>
+  </header>
 
-  <main>
-
-    <!-- ── FLAGS ── -->
-    <div class="section-title">🚨 Critical flags</div>
-    <div id="flags-critical"></div>
-
-    <div class="section-title" style="margin-top:14px">⚠️ Warnings</div>
-    <div id="flags-warn"></div>
-
-    <div class="divider"></div>
-
-    <!-- ── PROJECTS ── -->
-    <div class="section-title">Projects</div>
-    <div class="filter-bar" id="project-filters"></div>
-    <div id="projects-list"></div>
-
-    <div class="divider"></div>
-
-    <!-- ── PIPELINE ── -->
-    <div class="section-title">Pipeline — IoT</div>
-    <div id="pipeline-iot"></div>
-
-    <div class="section-title" style="margin-top:14px">Pipeline — Consulting</div>
-    <div id="pipeline-consult"></div>
-
-    <div class="divider"></div>
-
-    <!-- ── TRANSITION BLOCKERS ── -->
-    <div class="section-title">Full-time transition blockers</div>
-    <div id="blockers-list"></div>
-
-    <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:16px">
-      State audited <span id="audit-date"></span> · v<span id="state-version"></span>
+  <main class="app-content" id="app-content">
+    <!-- Loading -->
+    <div class="state-box" id="loading-state">
+      <div class="spinner"></div>
+      <h3>Loading Mission Log&hellip;</h3>
+      <p style="font-size:0.82rem;margin-top:0.3rem;">Syncing with The Director</p>
     </div>
-
+    <!-- Error -->
+    <div class="state-box" id="error-state" style="display:none;">
+      <div class="error-icon">&#9888;&#65039;</div>
+      <h3>Sync Failed</h3>
+      <p style="font-size:0.82rem;margin-top:0.3rem;" id="error-msg">Could not load Mission Log.</p>
+      <button class="retry-btn" onclick="loadData()">Retry</button>
+    </div>
+    <!-- Task list -->
+    <div id="tasks-view" style="display:none;"></div>
   </main>
 
-  <!-- VOICE STATUS BAR -->
-  <div id="voice-status">
-    <span class="pulse"></span>
-    <span id="voice-text">Listening…</span>
+  <footer class="app-footer">
+    <div>The Director &middot; Smart Vision (Pty) Ltd &middot; Mission Log v2</div>
+    <div id="last-sync">Last sync: &mdash;</div>
+  </footer>
+
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openDelegate()">+</button>
+
+<!-- Panel backdrop -->
+<div class="panel-backdrop" id="panel-backdrop" onclick="closePanel()"></div>
+
+<!-- ================================================================
+     BRIEF PANEL (Change H)
+     ================================================================ -->
+<div class="slide-panel" id="brief-panel">
+  <div class="panel-drag"></div>
+  <button class="panel-close" onclick="closePanel()">&#x2715;</button>
+  <div class="panel-title">The Director &mdash; Smart Vision AI Ecosystem</div>
+
+  <div class="brief-section">
+    <div class="brief-section-title">About</div>
+    <div class="brief-text">
+      This dashboard is the mobile face of <strong>The Director</strong> &mdash; the AI Chief of Staff
+      coordinating all Smart Vision work across Claude.ai, Cowork (Haica Brain),
+      Claude Code (VS Code), and the Google Drive Mission Log.
+    </div>
   </div>
 
-</div><!-- /ops-app -->
+  <div class="brief-section">
+    <div class="brief-section-title">Source of Truth</div>
+    <div class="brief-text">
+      <strong>Mission Log</strong> &mdash; My Drive/SV/Director/mission-log-v2<br>
+      Updated by The Director after each working session.
+    </div>
+  </div>
 
+  <div class="brief-section">
+    <div class="brief-section-title">Colour Guide</div>
+    <div class="brief-text" style="display:flex;flex-direction:column;gap:0.4rem;">
+      <div><span class="colour-pill" style="background:var(--red);"></span><strong style="color:var(--red);">Red</strong> &mdash; needs your input before anything moves forward</div>
+      <div><span class="colour-pill" style="background:var(--amber);"></span><strong style="color:var(--amber);">Amber</strong> &mdash; waiting for your review or approval</div>
+      <div><span class="colour-pill" style="background:var(--sv-blue);"></span><strong style="color:var(--sv-blue);">Blue</strong> &mdash; actively in progress &mdash; no action needed right now</div>
+    </div>
+  </div>
+
+  <div class="brief-section">
+    <div class="brief-section-title">How to Use</div>
+    <div class="brief-text">
+      <ul>
+        <li>Tap any task to see full details, folder path, and last update.</li>
+        <li>Car Mode (&#128663;) reads tasks aloud one by one &mdash; for your commute.</li>
+        <li>Summary (&#127897;) gives a spoken overview of what needs attention.</li>
+        <li>Delegate (+) briefs a new task into the system.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="brief-section">
+    <div class="brief-section-title">Environments</div>
+    <div class="brief-text">
+      <ul>
+        <li><strong>Claude.ai</strong> &mdash; strategy, research, planning, Director sessions</li>
+        <li><strong>Cowork / Haica Brain</strong> &mdash; knowledge base, proposals, documents</li>
+        <li><strong>Claude Code / VS Code</strong> &mdash; website and app builds</li>
+        <li><strong>Claude in Excel</strong> &mdash; SV-IOT Master Template, financial model</li>
+        <li><strong>Claude in Chrome</strong> &mdash; market research, LinkedIn, web tasks</li>
+      </ul>
+    </div>
+  </div>
+
+  <button class="speak-btn" id="speak-btn" onclick="speakBrief()">
+    &#128266; Play Spoken Brief
+  </button>
+</div>
+
+<!-- ================================================================
+     DELEGATE PANEL (Change J)
+     ================================================================ -->
+<div class="slide-panel" id="delegate-panel">
+  <div class="panel-drag"></div>
+  <button class="panel-close" onclick="closePanel()">&#x2715;</button>
+  <div class="panel-title">+ Delegate Task</div>
+
+  <div class="form-group">
+    <label class="form-label" for="del-name">Task Name</label>
+    <input class="form-input" type="text" id="del-name" placeholder="e.g. Update IoT pricing page">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="del-desc">Description</label>
+    <textarea class="form-textarea" id="del-desc" rows="3" placeholder="What needs to be done and why&hellip;"></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="del-env">Environment</label>
+    <select class="form-select form-input" id="del-env">
+      <option value="Claude.ai">Claude.ai</option>
+      <option value="Cowork">Cowork</option>
+      <option value="Claude Code">Claude Code</option>
+      <option value="VS Code">VS Code</option>
+      <option value="Claude in Excel">Claude in Excel</option>
+      <option value="Claude in Chrome">Claude in Chrome</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="del-notes">Notes</label>
+    <input class="form-input" type="text" id="del-notes" placeholder="Priority, deadline, dependencies&hellip;">
+  </div>
+
+  <button class="generate-btn" onclick="generateBrief()">Generate Brief</button>
+  <pre class="brief-output" id="brief-output"></pre>
+  <button class="copy-btn" id="copy-btn" onclick="copyBrief()">&#128203; Copy Brief</button>
+  <p class="delegate-hint">Paste into The Director in Claude.ai to log to the Mission Log.</p>
+</div>
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
 <script>
-/* ════════════════════════════════════════════
-   PASSCODE GATE
-════════════════════════════════════════════ */
-(function () {
-  const PASSCODE = "iotpulse2026"; // CHANGE THIS before sharing the URL
-  const KEY = "sv-ops-unlocked-v1";
-  const gate = document.getElementById("ops-gate");
-  const app  = document.getElementById("ops-app");
-  const input = document.getElementById("ops-passcode");
-  const err   = document.getElementById("ops-err");
+  /* ── CONFIG ── */
+  const PASSCODE         = '1234'; /* change before first use */
+  const ANTHROPIC_API_KEY = '';    /* set your Anthropic API key */
+  const SHEET_ID         = '1E9Ag-tXfDG81gLr3KZbiONgT2-CTl2Mi-xCxK5GUyZM';
 
-  function unlock() {
-    gate.classList.add("hidden");
-    app.hidden = false;
+  /* ── SESSION STATE ── */
+  let pinBuffer    = '';
+  let missionData  = null; /* cached for the session */
+  let speakingBrief = false;
+
+  /* ── LOCK SCREEN ── */
+  function pinPress(digit) {
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += digit;
+    updateDots();
+    if (pinBuffer.length === 4) checkPin();
+  }
+  function pinBack()  { pinBuffer = pinBuffer.slice(0, -1); updateDots(); }
+  function pinClear() { pinBuffer = ''; updateDots(); }
+
+  function updateDots() {
+    for (let i = 0; i < 4; i++) {
+      const d = document.getElementById('d' + i);
+      d.classList.toggle('filled', i < pinBuffer.length);
+      d.classList.remove('error');
+    }
+    document.getElementById('lock-error').innerHTML = '&nbsp;';
   }
 
-  if (localStorage.getItem(KEY) === "yes") { unlock(); }
-
-  function tryUnlock() {
-    if (input.value === PASSCODE) {
-      localStorage.setItem(KEY, "yes");
-      unlock();
+  function checkPin() {
+    if (pinBuffer === PASSCODE) {
+      document.getElementById('lock-screen').classList.add('unlocked');
+      setTimeout(() => { document.getElementById('lock-screen').style.display = 'none'; }, 450);
+      document.getElementById('app').classList.add('visible');
+      document.getElementById('fab').classList.add('visible');
+      loadData();
     } else {
-      err.textContent = "Wrong passcode.";
-      input.value = "";
-      input.focus();
+      for (let i = 0; i < 4; i++) document.getElementById('d' + i).classList.add('error');
+      document.getElementById('lock-error').textContent = 'Incorrect passcode';
+      setTimeout(() => { pinBuffer = ''; updateDots(); }, 900);
     }
   }
 
-  document.getElementById("ops-unlock-btn").addEventListener("click", tryUnlock);
-  input.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
-  input.focus();
-})();
-</script>
-
-<script>
-/* ════════════════════════════════════════════
-   STATE DATA  (sourced from _State/state.json v2)
-════════════════════════════════════════════ */
-const STATE = {
-  "meta": {
-    "lastAudited": "2026-05-10",
-    "version": 2,
-    "auditedBy": "Haica"
-  },
-  "flags": [
-    { "id": "f1", "level": "critical", "scope": "Day Job", "title": "Smart Roads (Bels Group) — deadline 8 April passed 33 days ago", "detail": "Status unknown. Confirm: submitted? Won? Lost? Delayed?" },
-    { "id": "f2", "level": "critical", "scope": "IoT", "title": "Pico Gro DS1 still not reinstalled (~50 days)", "detail": "Cable extended 20 March. Ian (A-Eye) unresponsive. This deal anchors A-Eye partnership and Phase 2+. Contact Ian with a hard date; build a direct line to Erika (picogro.com)." },
-    { "id": "f3", "level": "critical", "scope": "Website", "title": "Gemini API key exposed in legacy frontend", "detail": "Live smart-vision.co.za site still has the key in client JS. Confirm the new sv-main build has fixed this before pointing the domain." },
-    { "id": "f4", "level": "warn", "scope": "CEO", "title": "Burn rate / full-time transition revenue floor — still undefined", "detail": "Without this number, 'I'm ready' is unmeasurable. Month 1 of the 90-day roadmap. Open the financial model and finish the personal vs business cost split." },
-    { "id": "f5", "level": "warn", "scope": "IoT", "title": "G-Matrix new pricelist (1 March 2026, 5% increase) not received", "detail": "Quotes built off the old pricelist will be slightly under-priced. Email Carl." }
-  ],
-  "projects": [
-    { "id": "biz-plan", "name": "Business Plan", "division": "ceo", "progress": 70, "statusEmoji": "🟡", "status": "Strategic foundation done, financial precision still open", "nextAction": "Open Smart Vision Financial Transition Model.xlsx and complete burn rate inputs (separate personal vs business costs).", "tasks": [ { "id": "biz-1", "title": "Define monthly burn rate & full-time revenue floor", "state": "todo", "priority": "high" }, { "id": "biz-2", "title": "Review G-Matrix Annexures A & B", "state": "todo" }, { "id": "biz-3", "title": "Review LOI document (Google Drive)", "state": "todo" }, { "id": "biz-4", "title": "Build formal lead generation plan", "state": "todo" }, { "id": "biz-5", "title": "Finalise A-Eye partnership commercial terms", "state": "blocked", "note": "Waiting on Pico Gro POC" } ] },
-    { "id": "ramac-manual", "name": "RAMAC Portal User Manual", "division": "iot", "progress": 85, "statusEmoji": "🟢", "status": "md complete, .docx exists, needs final review and circulation", "nextAction": "Compare current .md vs .docx in folder. If .md is newer, regenerate .docx. Send to first customer for feedback.", "tasks": [ { "id": "ramac-1", "title": "Confirm latest markdown matches latest .docx", "state": "todo", "priority": "high" }, { "id": "ramac-2", "title": "Send to first customer for feedback", "state": "todo" } ] },
-    { "id": "saas-dashboard", "name": "Custom SaaS Dashboard (IoT)", "division": "iot", "progress": 10, "statusEmoji": "🔴", "status": "Stuck at decision gate — need G-Matrix API answer before any build", "nextAction": "Email Carl at G-Matrix asking for API documentation. Consider deferring until RAMAC Portal + Cerebro are proven inadequate.", "tasks": [ { "id": "saas-1", "title": "Email Carl: does G-Matrix expose REST/webhook API?", "state": "todo", "priority": "high" }, { "id": "saas-2", "title": "Decide: build now, defer, or skip in favour of Cerebro white-label", "state": "blocked" } ] },
-    { "id": "asset-tracking", "name": "Fixed Asset Tracking", "division": "iot", "progress": 15, "statusEmoji": "🔴", "status": "Stuck at decision gate", "nextAction": "Pick lead vertical (construction is the obvious play). Request AT1L spec sheet from G-Matrix.", "tasks": [ { "id": "asset-1", "title": "Pick lead vertical (construction / mining / hospitality)", "state": "todo", "priority": "high" }, { "id": "asset-2", "title": "Get AT1L spec sheet & GPS accuracy from G-Matrix", "state": "todo" } ] },
-    { "id": "panic-button", "name": "Retirement Estate Panic Button", "division": "iot", "progress": 25, "statusEmoji": "🟡", "status": "Market research done, no commercial conversations", "nextAction": "Channel decision: A-Eye partnership-led, or sell direct to estates?", "tasks": [ { "id": "panic-1", "title": "Decide channel: A-Eye-led vs direct", "state": "todo", "priority": "high" }, { "id": "panic-2", "title": "Confirm hardware: P1 vs SB1 with G-Matrix", "state": "todo" } ] },
-    { "id": "sv-main", "name": "sv-main — main Smart Vision website", "division": "website", "progress": 90, "statusEmoji": "🟢", "status": "Built and tracked in git. CNAME present. Deployment ready.", "nextAction": "Confirm Gemini API key removed/server-sided. Verify GitHub Pages deployment is live. Point domain.", "tasks": [ { "id": "svm-1", "title": "Confirm Gemini API key removed/server-sided", "state": "todo", "priority": "critical" }, { "id": "svm-2", "title": "Verify GitHub Pages deployment is live", "state": "todo", "priority": "high" }, { "id": "svm-3", "title": "Point smart-vision.co.za DNS at the new site", "state": "todo" } ] },
-    { "id": "sv-iot", "name": "sv-iot — IoT division landing site", "division": "website", "progress": 75, "statusEmoji": "🟢", "status": "Built with full RAMAC product image library. ELC1 product images present — confirm product code with Carl.", "nextAction": "Reconcile product list with confirmed 2026 pricelist. Decide: iot.smart-vision.co.za subdomain or fold into sv-main.", "tasks": [ { "id": "svi-1", "title": "Reconcile ELC1a/b/c product images with G-Matrix pricelist", "state": "todo", "priority": "high" }, { "id": "svi-2", "title": "Decide subdomain vs section of sv-main", "state": "todo" } ] },
-    { "id": "sv-shw", "name": "sv-shw — Smart Home Warehouse marketing site", "division": "shw", "progress": 60, "statusEmoji": "🟢", "status": "Built — landing/marketing site for SHW division.", "nextAction": "Decide domain strategy for SHW and link to sv-shw + shw-store." },
-    { "id": "sv-consult", "name": "sv-consult — Consulting division landing site", "division": "consulting", "progress": 60, "statusEmoji": "🟢", "status": "Built — landing/marketing site for Consultancy.", "nextAction": "Confirm content reflects the case-by-case (no-Elvey-conflict) Consulting positioning." },
-    { "id": "sv-solar", "name": "sv-solar — Solar division landing site", "division": "solar", "progress": 60, "statusEmoji": "🟢", "status": "Built — Solar runs passively under Dad.", "nextAction": "Low priority. Deploy when ready alongside the others." },
-    { "id": "shw-store", "name": "shw-store — Smart Home Warehouse e-commerce", "division": "shw", "progress": 50, "statusEmoji": "🟡", "status": "Next.js + Tailwind + TypeScript + PayFast. CartProvider working. Catalogue still to be populated.", "nextAction": "Decide product range (waiting on shw-product-scout output). Confirm PayFast merchant account is live. Decide hosting (Vercel?).", "tasks": [ { "id": "shw-1", "title": "Wire shw-product-scout output into shw-store catalogue", "state": "todo", "priority": "high" }, { "id": "shw-2", "title": "Confirm PayFast merchant account active", "state": "todo" }, { "id": "shw-3", "title": "Decide deployment target (Vercel / Netlify / SHW domain)", "state": "todo" } ] },
-    { "id": "shw-product-scout", "name": "shw-product-scout — Geewiz/Esquire scraper", "division": "shw", "progress": 70, "statusEmoji": "🟢", "status": "Substantially built. main.py, scheduler.py, brand_filter, Excel + Supabase exporters. Geewiz Playwright session working.", "nextAction": "Run a clean end-to-end scrape and produce the first product Excel + Supabase load. Then tie output into shw-store.", "tasks": [ { "id": "scout-1", "title": "Run first clean end-to-end scrape (Geewiz + Esquire + Pinnacle)", "state": "todo", "priority": "high" }, { "id": "scout-2", "title": "Confirm Supabase table schema matches exporter output", "state": "todo" }, { "id": "scout-3", "title": "Set up daily/weekly scheduler in production", "state": "todo" } ] },
-    { "id": "urban-construction", "name": "Urban Construction Access Control", "division": "consulting", "progress": 35, "statusEmoji": "🟡", "status": "Proposal stage. v0.1 .docx generated 8 May. Research on ClickOn (incumbent) and EVTrack (proposed) complete.", "nextAction": "Confirm: was v0.1 sent to client? Get client decision-maker name, complex address, current guard cost, EVTrack pricing.", "tasks": [ { "id": "uc-1", "title": "Confirm proposal v0.1 sent / response status", "state": "todo", "priority": "critical" }, { "id": "uc-2", "title": "Get client primary contact + decision-maker", "state": "todo", "priority": "high" }, { "id": "uc-3", "title": "Get current guard cost (ROI input)", "state": "todo" }, { "id": "uc-4", "title": "Get EVTrack formal quote (hardware + software)", "state": "todo" }, { "id": "uc-5", "title": "Pick armed response partner option (or open tender)", "state": "todo" }, { "id": "uc-6", "title": "Site visit / discovery session", "state": "todo" } ] },
-    { "id": "smart-roads", "name": "Smart Roads Surveillance (Day Job)", "division": "dayjob", "progress": 0, "statusEmoji": "⚠️", "status": "STATUS UNKNOWN — deadline 8 April 2026 passed", "nextAction": "5-min self-update: was the proposal submitted? Outcome? Any post-submission work?" },
-    { "id": "cv", "name": "CV / Job Search", "division": "dayjob", "progress": 60, "statusEmoji": "🟡", "status": "Kit built (full CV, 2-page CV, cover letter template). Refresh per role.", "nextAction": "No scheduled action. Refresh cover letter when applying." },
-    { "id": "github-learning", "name": "GitHub Learning Project", "division": "personal", "progress": 80, "statusEmoji": "🟢", "status": "Reference materials created. Applied: all Code repos use git, sv-main deploying via GitHub Pages.", "nextAction": "Mark complete after first PR-based collaboration." }
-  ],
-  "pipeline": [
-    { "id": "p1", "name": "Pico Gro Cold Room POC (A-Eye)", "division": "iot", "stageLabel": "Active POC — STALLED", "stageClass": "stalled", "daysSince": 50, "status": "DS1 installed 6 March. Signal issues found 20 March, cable extended. NOT YET REINSTALLED. Ian busy and unresponsive. Data via RAMAC portal when connected.", "nextAction": "Contact Ian with a hard reinstall date. Build direct line to Erika (owner, picogro.com).", "contact": "Ian (electrician + A-Eye shareholder); Erika Oberholzer (picogro.com)" },
-    { "id": "p2", "name": "Pico Gro Phase 2+ (Farm Monitoring)", "division": "iot", "stageLabel": "Discussions — Phase 1 dependent", "stageClass": "", "daysSince": 36, "status": "Water mgmt + irrigation. RAMAC-fit (Sigfox level sensors). Phase 2 can quote independently.", "nextAction": "Wait for POC unblock. Then book site water audit. Phase 2 RAMAC quote can proceed without Phase 1.", "contact": "Same as Pico Gro POC" },
-    { "id": "p3", "name": "Barloworld Tyre Tracking (via Proftech)", "division": "iot", "stageLabel": "POC being arranged", "stageClass": "", "daysSince": 36, "status": "Proftech arranging POC. Mining truck tyre tracking using AT1L. SV role fluid: sub-consult or sub to integrator. AT1L is VSS-certified — pitch to insurer.", "nextAction": "Wait for Proftech POC site confirmation. Verify Sigfox coverage. Confirm 1 March pricing applied.", "contact": "Carl (G-Matrix); Proftech contact TBC" },
-    { "id": "p4", "name": "A-Eye Diesel Loss & Fleet Tracking", "division": "iot", "stageLabel": "Solution research done", "stageClass": "", "daysSince": 28, "status": "AT1L + RAMAC fuel level NOT feasible. Capacitive sensor research done (SmartMix, Landmark, Fleetsense). Customer in Rustenburg.", "nextAction": "Send Ian a 1-pager on capacitive sensor option to start a real customer conversation.", "contact": "Ian (A-Eye); customer TBC" },
-    { "id": "p5", "name": "A-Eye Golf Course Irrigation", "division": "iot", "stageLabel": "Needs proposal to start", "stageClass": "", "daysSince": 36, "status": "Lead from Ian. No client conversation yet. Must propose solution to Ian first.", "nextAction": "Draft solution concept (RAMAC-first: Sigfox level sensors on tanks). LoRaWAN deferred per strategy.", "contact": "Ian (A-Eye); customer TBC" },
-    { "id": "p6", "name": "A-Eye Retirement Estate (target market)", "division": "iot", "stageLabel": "Market research only", "stageClass": "", "daysSince": 36, "status": "Target market — P1 panic button research started. NOT an A-Eye client lead.", "nextAction": "Roll into Retirement Estate Panic Button channel decision (see Projects).", "contact": "—" },
-    { "id": "uc", "name": "Urban Construction Access Control", "division": "consulting", "stageLabel": "Proposal v0.1 generated", "stageClass": "proposal", "daysSince": 2, "status": "Residential complex developer (~300 units). Replace ClickOn + reduce guards. Move to EVTrack + remote control room + armed response. Proposal v0.1.docx exists.", "nextAction": "Confirm proposal sent / client response. Get site visit booked. Get formal EVTrack quote.", "contact": "Urban Construction (specific contact TBC)" }
-  ],
-  "transitionBlockers": [
-    "Define the burn rate / revenue floor — until this number exists, 'ready' is unmeasurable.",
-    "Close the Pico Gro POC — reinstall DS1, get a clean month of data.",
-    "Convert one Barloworld POC unit — contract #2 of the 90-day target.",
-    "Ship one G-Matrix-channel deal that isn't A-Eye-linked — generator monitoring or cold chain via the GTM packs.",
-    "Ship Urban Construction proposal cleanly — first paid Consulting engagement validates the case-by-case model.",
-    "Get shw-store live with a real product range from shw-product-scout."
-  ]
-};
-
-/* ════════════════════════════════════════════
-   RENDER
-════════════════════════════════════════════ */
-
-// ── Date header ──
-(function () {
-  const d = new Date();
-  const opts = { weekday: "short", month: "short", day: "numeric" };
-  document.getElementById("header-date").textContent =
-    d.toLocaleDateString("en-ZA", opts);
-  document.getElementById("audit-date").textContent = STATE.meta.lastAudited;
-  document.getElementById("state-version").textContent = STATE.meta.version;
-})();
-
-// ── Flags ──
-(function () {
-  const crit = document.getElementById("flags-critical");
-  const warn = document.getElementById("flags-warn");
-  STATE.flags.forEach(f => {
-    const el = document.createElement("div");
-    el.className = "flag-card" + (f.level === "warn" ? " warn" : "");
-    el.innerHTML = `
-      <div class="flag-title">
-        <span class="flag-badge${f.level === "warn" ? " warn" : ""}">${f.level}</span>
-        ${esc(f.title)}
-      </div>
-      <div class="flag-scope">${esc(f.scope)}</div>
-      <div class="flag-detail">${esc(f.detail)}</div>`;
-    (f.level === "critical" ? crit : warn).appendChild(el);
-  });
-})();
-
-// ── Division filter ──
-const DIVISIONS = [
-  { id: "all", label: "All" },
-  { id: "iot", label: "IoT" },
-  { id: "ceo", label: "CEO" },
-  { id: "website", label: "Website" },
-  { id: "shw", label: "SHW" },
-  { id: "consulting", label: "Consulting" },
-  { id: "dayjob", label: "Day Job" },
-  { id: "solar", label: "Solar" },
-  { id: "personal", label: "Personal" },
-];
-
-let activeDiv = "all";
-
-function renderProjects() {
-  const list = document.getElementById("projects-list");
-  list.innerHTML = "";
-  STATE.projects
-    .filter(p => activeDiv === "all" || p.division === activeDiv)
-    .forEach(p => {
-      const card = document.createElement("div");
-      card.className = "project-card";
-      card.dataset.id = p.id;
-
-      const taskHtml = p.tasks ? p.tasks.map(t => `
-        <div class="task-item">
-          <div class="task-checkbox${t.state === "done" ? " done" : ""}" data-task="${t.id}" data-proj="${p.id}"></div>
-          <span class="task-text${t.state === "done" ? " done" : ""}">${esc(t.title)}${t.note ? ` <em style="color:var(--text-muted)">(${esc(t.note)})</em>` : ""}</span>
-          ${t.priority ? `<span class="task-priority ${t.priority}">${t.priority}</span>` : ""}
-        </div>`).join("") : "";
-
-      card.innerHTML = `
-        <div class="project-header">
-          <div class="project-name">${p.statusEmoji} ${esc(p.name)}</div>
-          <div class="project-progress-label">${p.progress}%</div>
-        </div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="width:${p.progress}%"></div>
-        </div>
-        <div class="project-status">${esc(p.status)}</div>
-        <div class="project-next">${esc(p.nextAction)}</div>
-        ${taskHtml ? `<div class="task-list">${taskHtml}</div><div class="expand-hint">Tap to toggle tasks</div>` : ""}`;
-
-      card.addEventListener("click", e => {
-        // Don't collapse if clicking a checkbox
-        if (e.target.classList.contains("task-checkbox")) return;
-        card.classList.toggle("expanded");
-      });
-
-      list.appendChild(card);
+  /* ── DATA LOAD (Change G) ── */
+  async function loadMissionLog() {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'mcp-client-2025-04-04'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        system: 'Read the Google Sheet and return ONLY a valid JSON array. No markdown, no explanation. Each object: { id, name, description, status, environment, folder, version, outputLink, lastUpdated, notes }',
+        messages: [{
+          role: 'user',
+          content: 'Read Google Sheet ID "' + SHEET_ID + '". Return all rows (skip header) as a JSON array. Column mapping: Task ID→id, Task Name→name, Description→description, Status→status, Environment→environment, Project/Folder→folder, Version→version, Output Link→outputLink, Last Updated→lastUpdated, Notes→notes. Return ONLY the JSON array.'
+        }],
+        mcp_servers: [{ type: 'url', url: 'https://drivemcp.googleapis.com/mcp/v1', name: 'google-drive' }]
+      })
     });
+    if (!res.ok) throw new Error('API ' + res.status + ' — check API key and network');
+    const data  = await res.json();
+    const text  = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const s = clean.indexOf('['), e = clean.lastIndexOf(']');
+    return JSON.parse(s >= 0 ? clean.slice(s, e + 1) : clean);
+  }
 
-  // Wire task checkboxes
-  list.querySelectorAll(".task-checkbox").forEach(cb => {
-    cb.addEventListener("click", e => {
-      e.stopPropagation();
-      cb.classList.toggle("done");
-      cb.nextElementSibling.classList.toggle("done");
-      // Persist in localStorage
-      const key = `task-${cb.dataset.proj}-${cb.dataset.task}`;
-      localStorage.setItem(key, cb.classList.contains("done") ? "done" : "todo");
-    });
-    // Restore from localStorage
-    const key = `task-${cb.dataset.proj}-${cb.dataset.task}`;
-    if (localStorage.getItem(key) === "done") {
-      cb.classList.add("done");
-      cb.nextElementSibling.classList.add("done");
+  async function loadData() {
+    document.getElementById('loading-state').style.display  = 'block';
+    document.getElementById('error-state').style.display    = 'none';
+    document.getElementById('tasks-view').style.display     = 'none';
+    try {
+      missionData = await loadMissionLog();
+      const now = new Date();
+      document.getElementById('last-sync').textContent =
+        'Last sync: ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      renderTasks(missionData);
+    } catch (err) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('error-state').style.display   = 'block';
+      document.getElementById('error-msg').textContent = err.message || 'Could not load Mission Log.';
     }
-  });
-}
+  }
 
-(function initFilters() {
-  const bar = document.getElementById("project-filters");
-  DIVISIONS.forEach(d => {
-    const btn = document.createElement("button");
-    btn.className = "filter-btn" + (d.id === "all" ? " active" : "");
-    btn.textContent = d.label;
-    btn.addEventListener("click", () => {
-      bar.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      activeDiv = d.id;
-      renderProjects();
+  /* ── RENDER ── */
+  const STATUS_CFG = {
+    awaiting_input:  { label: 'Needs Input',     dot: 'dot-red',   text: 'text-red',   bar: 'var(--red)' },
+    awaiting_review: { label: 'Awaiting Review', dot: 'dot-amber', text: 'text-amber', bar: 'var(--amber)' },
+    active:          { label: 'Active',           dot: 'dot-blue',  text: 'text-blue',  bar: 'var(--sv-blue)' },
+    asset:           { label: 'Asset',            dot: 'dot-teal',  text: 'text-teal',  bar: 'var(--teal)' }
+  };
+  const STATUS_ORDER = ['awaiting_input', 'awaiting_review', 'active', 'asset'];
+
+  function isCritical(task) {
+    return task.status === 'awaiting_input' ||
+      (task.notes && task.notes.toUpperCase().includes('CRITICAL'));
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderTasks(data) {
+    const filtered = data.filter(t => t.status !== 'archived');
+    const view = document.getElementById('tasks-view');
+    view.innerHTML = '';
+
+    STATUS_ORDER.forEach(status => {
+      const tasks = filtered.filter(t => t.status === status);
+      if (!tasks.length) return;
+      const cfg   = STATUS_CFG[status];
+      const group = document.createElement('div');
+      group.className = 'status-group';
+      group.innerHTML = `
+        <div class="group-header">
+          <div class="group-dot ${cfg.dot}"></div>
+          <span class="group-label ${cfg.text}">${cfg.label}</span>
+          <span class="group-count">${tasks.length}</span>
+        </div>
+        ${tasks.map(t => taskCardHtml(t, cfg)).join('')}
+      `;
+      view.appendChild(group);
     });
-    bar.appendChild(btn);
-  });
-  renderProjects();
-})();
 
-// ── Pipeline ──
-(function () {
-  function renderPipeline(divId, containerId) {
-    const el = document.getElementById(containerId);
-    STATE.pipeline.filter(p => p.division === divId).forEach(p => {
-      const daysClass = p.daysSince >= 45 ? "critical-stale" : p.daysSince >= 20 ? "stale" : "";
-      el.innerHTML += `
-        <div class="pipeline-card">
-          <div class="pipeline-header">
-            <div class="pipeline-name">${esc(p.name)}</div>
-            <span class="stage-badge ${p.stageClass || ""}">${esc(p.stageLabel)}</span>
+    document.getElementById('loading-state').style.display = 'none';
+    view.style.display = 'block';
+  }
+
+  function taskCardHtml(task, cfg) {
+    const critical   = isCritical(task);
+    const outputHtml = task.outputLink
+      ? `<a class="detail-link" href="${esc(task.outputLink)}" target="_blank" rel="noopener">${esc(task.outputLink)}</a>`
+      : '<span style="color:var(--txt-muted)">—</span>';
+    return `
+      <div class="task-card" onclick="toggleCard(this)">
+        <div class="task-card-head">
+          <div class="task-status-bar" style="background:${cfg.bar};"></div>
+          <div class="task-meta">
+            <div class="task-id mono">${esc(task.id)}</div>
+            <div class="task-name">
+              ${esc(task.name)}${critical ? '<span class="critical-badge">critical</span>' : ''}
+            </div>
           </div>
-          <div class="pipeline-days">Last touch: <span class="days-num ${daysClass}">${p.daysSince}d ago</span></div>
-          <div class="pipeline-status">${esc(p.status)}</div>
-          <div class="pipeline-next">${esc(p.nextAction)}</div>
-          ${p.contact ? `<div class="pipeline-contact">👤 ${esc(p.contact)}</div>` : ""}
-        </div>`;
+          <div class="task-chevron">&#9658;</div>
+        </div>
+        <div class="task-detail">
+          ${task.description ? `<div class="detail-row"><span class="detail-key">Description</span><span class="detail-val">${esc(task.description)}</span></div>` : ''}
+          ${task.environment ? `<div class="detail-row"><span class="detail-key">Environment</span><span class="detail-val">${esc(task.environment)}</span></div>` : ''}
+          ${task.folder      ? `<div class="detail-row"><span class="detail-key">Folder</span><span class="detail-val">${esc(task.folder)}</span></div>` : ''}
+          ${task.version     ? `<div class="detail-row"><span class="detail-key">Version</span><span class="detail-val">${esc(task.version)}</span></div>` : ''}
+          <div class="detail-row"><span class="detail-key">Output</span><span class="detail-val">${outputHtml}</span></div>
+          ${task.lastUpdated ? `<div class="detail-row"><span class="detail-key">Updated</span><span class="detail-val">${esc(task.lastUpdated)}</span></div>` : ''}
+          ${task.notes       ? `<div class="detail-row"><span class="detail-key">Notes</span><span class="detail-val">${esc(task.notes)}</span></div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function toggleCard(el) { el.classList.toggle('expanded'); }
+
+  /* ── PANELS ── */
+  let activePanel = null;
+
+  function openPanel(id) {
+    if (activePanel) { activePanel.classList.remove('open'); }
+    activePanel = document.getElementById(id);
+    document.getElementById('panel-backdrop').classList.add('open');
+    activePanel.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePanel() {
+    if (activePanel) { activePanel.classList.remove('open'); activePanel = null; }
+    document.getElementById('panel-backdrop').classList.remove('open');
+    document.body.style.overflow = '';
+    if (speakingBrief) { speechSynthesis.cancel(); speakingBrief = false; }
+  }
+  function openBrief()    { openPanel('brief-panel'); }
+  function openDelegate() { openPanel('delegate-panel'); }
+
+  /* ── SPEECH ── */
+  function getGreeting() {
+    const h = new Date().getHours();
+    return h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+  }
+
+  function buildBriefText() {
+    if (!missionData) return 'Mission Log has not loaded yet. Please retry the sync.';
+    const filtered = missionData.filter(t => t.status !== 'archived');
+    const inputs   = filtered.filter(t => t.status === 'awaiting_input');
+    const reviews  = filtered.filter(t => t.status === 'awaiting_review');
+    const active   = filtered.filter(t => t.status === 'active');
+    const day      = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
+    let b  = `Good ${getGreeting()} Haiko. Smart Vision briefing for ${day}. `;
+        b += `${inputs.length} item${inputs.length !== 1 ? 's' : ''} need your input. `;
+        b += `${reviews.length} are awaiting your review. `;
+        b += `${active.length} are actively in progress. `;
+    if (inputs.length > 0) {
+      b += `Priority items: ${inputs.map(t => t.name).join('. ')}. `;
+    } else {
+      b += 'No blockers today. ';
+    }
+    b += 'End of briefing.';
+    return b;
+  }
+
+  function speakBrief() {
+    if (!('speechSynthesis' in window)) { alert('Speech synthesis is not supported in this browser.'); return; }
+    const btn = document.getElementById('speak-btn');
+    if (speakingBrief) {
+      speechSynthesis.cancel();
+      speakingBrief = false;
+      btn.innerHTML = '&#128266; Play Spoken Brief';
+      btn.classList.remove('speaking');
+      return;
+    }
+    const utt  = new SpeechSynthesisUtterance(buildBriefText());
+    utt.lang   = 'en-ZA';
+    utt.rate   = 0.93;
+    utt.onstart = () => {
+      speakingBrief = true;
+      btn.innerHTML = '&#9646;&#9646; Stop';
+      btn.classList.add('speaking');
+    };
+    utt.onend = utt.onerror = () => {
+      speakingBrief = false;
+      btn.innerHTML = '&#128266; Play Spoken Brief';
+      btn.classList.remove('speaking');
+    };
+    speechSynthesis.speak(utt);
+  }
+
+  function startSummary() {
+    openPanel('brief-panel');
+    setTimeout(speakBrief, 400);
+  }
+
+  function startCarMode() {
+    if (!missionData) { alert('Mission Log has not loaded yet.'); return; }
+    const order = ['awaiting_input', 'awaiting_review', 'active'];
+    const tasks = [];
+    order.forEach(s => tasks.push(...missionData.filter(t => t.status === s)));
+    if (!tasks.length) { alert('No active tasks to read.'); return; }
+    speechSynthesis.cancel();
+    let idx = 0;
+    function readNext() {
+      if (idx >= tasks.length) {
+        const fin = new SpeechSynthesisUtterance('End of Mission Log. Drive safe, Haiko.');
+        fin.lang = 'en-ZA';
+        speechSynthesis.speak(fin);
+        return;
+      }
+      const t   = tasks[idx++];
+      const cfg = STATUS_CFG[t.status] || {};
+      const utt = new SpeechSynthesisUtterance(
+        `Task ${t.id}. ${t.name}. Status: ${cfg.label || t.status}. ${t.description || ''}`
+      );
+      utt.lang  = 'en-ZA';
+      utt.rate  = 0.9;
+      utt.onend = () => setTimeout(readNext, 700);
+      speechSynthesis.speak(utt);
+    }
+    readNext();
+  }
+
+  /* ── DELEGATE (Change J) ── */
+  function generateBrief() {
+    const name  = document.getElementById('del-name').value.trim();
+    const desc  = document.getElementById('del-desc').value.trim();
+    const env   = document.getElementById('del-env').value;
+    const notes = document.getElementById('del-notes').value.trim();
+    if (!name) { document.getElementById('del-name').focus(); return; }
+    const today = new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' });
+    const lines = [
+      `NEW TASK BRIEF — ${name}`,
+      `Environment: ${env}`,
+      desc  ? `Description: ${desc}`  : null,
+      notes ? `Notes: ${notes}`        : null,
+      `Date: ${today}`,
+      `→ Paste into The Director in Claude.ai to log to the Mission Log.`
+    ].filter(Boolean);
+    const out = document.getElementById('brief-output');
+    out.textContent = lines.join('\n');
+    out.classList.add('show');
+    document.getElementById('copy-btn').classList.add('show');
+  }
+
+  function copyBrief() {
+    const text = document.getElementById('brief-output').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.innerHTML = '&#128203; Copy Brief'; }, 2000);
     });
   }
-  renderPipeline("iot", "pipeline-iot");
-  renderPipeline("consulting", "pipeline-consult");
-})();
-
-// ── Blockers ──
-(function () {
-  const el = document.getElementById("blockers-list");
-  STATE.transitionBlockers.forEach((b, i) => {
-    el.innerHTML += `
-      <div class="blocker-item">
-        <div class="blocker-num">${i + 1}</div>
-        <div class="blocker-text">${esc(b)}</div>
-      </div>`;
-  });
-})();
-
-/* ════════════════════════════════════════════
-   VOICE — READ ALOUD
-════════════════════════════════════════════ */
-(function () {
-  const btn = document.getElementById("btn-speak");
-  let speaking = false;
-
-  function buildBriefing() {
-    const lines = [];
-    const d = new Date();
-    lines.push(`Smart Vision Operations briefing, ${d.toDateString()}.`);
-
-    const critical = STATE.flags.filter(f => f.level === "critical");
-    if (critical.length) {
-      lines.push(`${critical.length} critical flag${critical.length > 1 ? "s" : ""}.`);
-      critical.forEach(f => lines.push(`${f.scope}: ${f.title}. ${f.detail}`));
-    }
-
-    const warns = STATE.flags.filter(f => f.level === "warn");
-    if (warns.length) {
-      lines.push(`${warns.length} warning${warns.length > 1 ? "s" : ""}.`);
-      warns.forEach(f => lines.push(`${f.scope}: ${f.title}`));
-    }
-
-    lines.push("Top next actions.");
-    STATE.projects
-      .filter(p => p.tasks && p.tasks.some(t => t.priority === "critical" || t.priority === "high"))
-      .slice(0, 4)
-      .forEach(p => {
-        const t = p.tasks.find(t => t.priority === "critical" || t.priority === "high");
-        lines.push(`${p.name}: ${t.title}.`);
-      });
-
-    lines.push("Transition blockers: " + STATE.transitionBlockers.slice(0, 3).join(". ") + ".");
-    lines.push("End of briefing.");
-
-    return lines.join(" ");
-  }
-
-  btn.addEventListener("click", () => {
-    if (speaking) {
-      window.speechSynthesis.cancel();
-      speaking = false;
-      btn.textContent = "🔊 Brief";
-      return;
-    }
-    const text = buildBriefing();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.rate = 0.95;
-    utt.lang = "en-ZA";
-    utt.onstart = () => { speaking = true; btn.textContent = "⏹ Stop"; };
-    utt.onend = () => { speaking = false; btn.textContent = "🔊 Brief"; };
-    utt.onerror = () => { speaking = false; btn.textContent = "🔊 Brief"; };
-    window.speechSynthesis.speak(utt);
-  });
-})();
-
-/* ════════════════════════════════════════════
-   VOICE — LISTEN INPUT
-════════════════════════════════════════════ */
-(function () {
-  const btn = document.getElementById("btn-listen");
-  const statusBar = document.getElementById("voice-status");
-  const voiceText = document.getElementById("voice-text");
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    btn.title = "Speech recognition not supported on this browser";
-    btn.style.opacity = "0.4";
-    btn.style.cursor = "default";
-    return;
-  }
-
-  const rec = new SpeechRecognition();
-  rec.lang = "en-ZA";
-  rec.continuous = false;
-  rec.interimResults = true;
-
-  let listening = false;
-
-  btn.addEventListener("click", () => {
-    if (listening) {
-      rec.stop();
-      return;
-    }
-    rec.start();
-  });
-
-  rec.onstart = () => {
-    listening = true;
-    btn.classList.add("active");
-    statusBar.classList.add("visible");
-    voiceText.textContent = "Listening…";
-  };
-
-  rec.onresult = e => {
-    const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
-    voiceText.textContent = transcript;
-  };
-
-  rec.onend = () => {
-    listening = false;
-    btn.classList.remove("active");
-    statusBar.classList.remove("visible");
-  };
-
-  rec.onerror = e => {
-    listening = false;
-    btn.classList.remove("active");
-    statusBar.classList.remove("visible");
-    if (e.error !== "aborted") voiceText.textContent = "Error: " + e.error;
-  };
-})();
-
-/* ════════════════════════════════════════════
-   UTILS
-════════════════════════════════════════════ */
-function esc(str) {
-  if (!str) return "";
-  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
 </script>
+
 </body>
 </html>
